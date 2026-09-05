@@ -19,12 +19,11 @@ did it.
 
 | | |
 |---|---|
-| **Phase** | 0 — Design Foundation (complete, signed off) |
-| **Implemented** | **Nothing.** No code, no assets, no networking, no prototypes. |
-| **Next** | Phase 1 — greybox solo prototype + 3D asset-pipeline proof |
-
-This repository currently contains design documentation only. Nothing described in these
-documents has been built.
+| **Phase** | 1 — Simulation + art pipeline proof |
+| **Implemented** | Headless deterministic simulation (`packages/sim`), procedural glTF asset pipeline (`packages/assets`), Three.js viewer + performance harness (`packages/client`). **No networking. No gameplay client. Not a playable game yet.** |
+| **Verified** | 41 tests passing, typecheck clean, 18/18 glTF checks, sim at 0.099–0.182 ms/tick |
+| **Not verified** | Mid-range phone frame rate (**no browser in this environment**) and the Blender authoring leg (**no Blender here**). See [Phase 1 Report §4](docs/PHASE1_REPORT.md#4-workstream-b--what-is-verified-and-what-is-not). |
+| **Next** | Run the device benchmark, then Phase 2 — playable greybox |
 
 ---
 
@@ -33,7 +32,8 @@ documents has been built.
 | Document | Contents |
 |---|---|
 | **[docs/GAME_DESIGN_FOUNDATION.md](docs/GAME_DESIGN_FOUNDATION.md)** | The Phase 0 deliverable: vision, USP, audience, core loop, mechanics, fun design, MVP scope, multiplayer direction, progression, art/audio, tech stack, AI usage, phased roadmap, risks, next step. |
-| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Binding decision log (ADR-style, D-001…D-022). Future phases build on these and may not silently revise them. |
+| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Binding decision log (ADR-style, D-001…D-024). Future phases build on these and may not silently revise them. |
+| **[docs/PHASE1_REPORT.md](docs/PHASE1_REPORT.md)** | What Phase 1 built, what was actually verified, what was not, and the four design defects building it uncovered. |
 
 ---
 
@@ -64,19 +64,17 @@ layer.
 as a working title only. A trademark and marketplace search is required before Phase 1
 (D-019, risk R1).
 
-## Planned structure
-
-Target layout for Phase 1. **These directories do not exist yet** — the structure is
-recorded here so the intent is explicit, not because any of it has been created.
+## Structure
 
 ```
 packages/
-  sim/        # Pure game logic. (state, input) -> state. No rendering, no I/O.
-  server/     # Authoritative tick loop, rooms, snapshots.
-  client/     # Three.js renderer + input. No game logic.
-  shared/     # Protocol schema and balance data tables.
-  bots/       # Headless scripted players for load and soak testing.
-assets/       # Blender sources + exported glTF, with an automated size/poly budget check.
+  sim/        # ✅ Pure game logic. (state, input) -> state. No rendering, no I/O.
+  assets/     # ✅ Procedural glTF generator + validator.
+  client/     # ✅ Three.js viewer + performance harness (not yet a game client).
+  server/     # — Phase 7 (authoritative tick loop, rooms, snapshots).
+  shared/     # — folded into sim/data for now; extract when the protocol lands.
+  bots/       # — seeded by packages/sim/test/bot.ts; promoted in Phase 7.
+assets/       # Generated .glb (gitignored; regenerate with npm run build:assets).
 docs/         # Design documentation.
 ```
 

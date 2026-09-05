@@ -1123,6 +1123,27 @@ a value case that beats the risk.
 
 ## 13. Development Roadmap
 
+> **RE-SEQUENCED 2026-09-05 — see [D-023](./DECISIONS.md).** The phase detail below was
+> written for the original ordering, in which online multiplayer was Phase 3. The
+> **authoritative ordering is now the nine-phase table below**, and online multiplayer is
+> **Phase 7**. The per-phase detail sections that follow remain valid as *scope and
+> verification* definitions; only their numbers changed. Read the table first, then the
+> matching detail section.
+>
+> | Phase | Name | Detail section below |
+> |---|---|---|
+> | **0** | Foundation — ✅ complete | Phase 0 |
+> | **1** | Simulation + art pipeline proof | Phase 1 |
+> | **2** | Playable greybox (solo) | Phase 1 detail + Phase 2 verification |
+> | **3** | **Local** multiplayer (2–4, same device) | — new; see D-023 |
+> | **4** | Fun + content expansion | Phase 2 |
+> | **5** | Progression + cosmetics | Phase 4 |
+> | **6** | Polish + alpha/beta | Phase 5 + Phase 6 |
+> | **7** | **Online** multiplayer + deployment | Phase 3 + Phase 7 |
+> | **8** | Launch + post-launch | Phase 7 |
+>
+> Consequences of this ordering are recorded as risk **R15** and as an amendment to D-012.
+
 Each phase has an explicit **"must NOT change yet"** gate. These exist to prevent the most
 common failure mode of small-team game development: rebuilding the foundation every phase.
 Changing something behind a gate requires a written entry in `DECISIONS.md`.
@@ -1296,6 +1317,7 @@ The order is deliberate and each dependency is a risk-reduction step:
 | **R12** | **NEW (from Q-A + Q-C): 3D performance in mobile browsers.** Link-join plus free-to-play implies many phone players, and mobile browsers are the least forgiving 3D target. This risk did not exist under the 2D recommendation. | Medium | **High** | Low-poly/flat-shaded/no-PBR constraint (§10.1); automated draw-call, poly, texture, and bundle budgets; a scalable quality tier; and a **mobile frame-rate checkpoint in Phase 1 on the greybox kitchen** (§11.3b). A 2D fallback path stays architecturally possible via D-009 but is **not budgeted**. |
 | **R13** | **NEW (from Q-D): F2P cosmetics is a harder business than a one-time purchase for a small team** — it needs volume, conversion, and a steady supply of new 3D items (§10.1b limits supply). | Medium | Medium | Build the pipeline now; **hold the store until Phase 7** with real D1/D7 retention data (§9.2). Weak retention cannot be fixed by store design, so there is nothing to lose by waiting. |
 | **R14** | **NEW (from Q-C): 3D moves us visually closer to the genre incumbents**, weakening visual differentiation and increasing reliance on the gremlin identity, the receipt-motif UI, and the Chaos mechanic to carry it. | Medium | Medium | Accepted as a trade-off of Q-C. Raises the importance of D-002 and of the character/UI identity. Do not respond by copying incumbent visual language — that is both a differentiation and an IP failure. |
+| **R15** | **NEW (from D-023): online multiplayer at Phase 7 means alpha/beta (Phase 6) tests a game whose primary distribution mode is untested.** Latency feel, reconnect behaviour, and remote-playtest feedback all arrive late, with less time to react. All playtesting in Phases 2–6 is local-only. | Medium | Medium | Accepted knowingly (D-023). **Recommended fallback if this bites: pull a thin online slice forward to Phase 4** — room code plus 2 players, no client prediction — purely to enable remote playtesting. Decide at the Phase 4 gate, not later. |
 
 ---
 

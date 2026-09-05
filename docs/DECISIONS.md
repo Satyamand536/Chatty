@@ -157,7 +157,12 @@ are recorded as D-021 and D-022 below.
 - **Change rule:** any addition to the MVP requires a corresponding removal.
 
 ### D-012 — The Bill and its share card ship in the MVP
-- **Status:** ACCEPTED
+- **Status:** ACCEPTED (amended by D-023)
+- **Amendment (2026-09-05):** because online multiplayer moved to Phase 7 (D-023), nothing
+  can be *joined* from a share card until then. **The MVP share card therefore ships
+  without a join link.** The link is added in Phase 7. Everything else in this decision
+  stands — the card itself, the 1080×1080 export, and the requirement that it ships early
+  rather than as a late marketing bolt-on.
 - **Phase:** 0
 - **Decision:** The end-of-shift recap, including an exportable 1080×1080 share image with
   a join link, is MVP scope — not a late polish item.
@@ -236,6 +241,38 @@ are recorded as D-021 and D-022 below.
 - **Trade-off accepted:** naming work may reopen. Deliberately preferred over discovering
   it at launch.
 
+### D-023 — Roadmap re-sequenced: online multiplayer moves to Phase 7
+- **Status:** ACCEPTED
+- **Phase:** 1 (start of Phase 1, 2026-09-05)
+- **Supersedes:** the phase ordering in D-007 and D-008. Their *content* decisions stand —
+  local-first, no accounts, no stubbed networking. Only the **ordering** changes.
+- **Decision:** Adopt the nine-phase ordering (0–8): 0 Foundation · 1 Simulation + art
+  pipeline proof · 2 Playable greybox · **3 Local multiplayer** · 4 Fun + content ·
+  5 Progression + cosmetics · 6 Polish + alpha/beta · **7 Online multiplayer + deployment**
+  · 8 Launch + post-launch. Online networking moves from Phase 3 to **Phase 7**.
+- **Rationale:** Defers all networking risk until after fun, content, progression, and
+  polish are proven. Consistent with the existing principle "networking is a multiplier on
+  fun; it multiplies zero" (§13). It also means Phases 2–6 carry no server infrastructure
+  cost.
+- **Consequences recorded honestly (these are new risks, not reasons to refuse):**
+  1. **The link-join advantage is deferred.** Browser-first was chosen (Q-A, D-007)
+     substantially because a URL is the invite and because remote playtesting is
+     frictionless. Under this ordering, **all playtesting in Phases 2–6 is local-only**, so
+     that benefit does not arrive until Phase 7. Accepted.
+  2. **D-012 (share card in MVP) is partly hollow.** The card carries a join link, but
+     nothing can be joined until Phase 7. **Resolution: the MVP share card ships without a
+     join link; the link is added in Phase 7.** D-012 is amended accordingly.
+  3. **Phase 6 alpha/beta tests a game whose primary distribution mode is untested.**
+     Beta feedback will be about local play; online feel, latency, and reconnect behaviour
+     land afterwards, with less time to react. **Recorded as risk R15.** Mitigation
+     available if this proves painful: pull a thin online slice (room code + 2 players,
+     no prediction) forward to Phase 4 purely for remote playtesting.
+- **Alternatives:** keep online at Phase 3 (earlier remote playtesting, but netcode risk
+  lands before the fun is proven); insert a thin online slice at Phase 4 (recommended
+  fallback if R15 bites).
+- **Trade-off accepted:** slower to a remotely playable build, in exchange for not
+  building netcode against an unproven game loop.
+
 ### D-020 — Renderer is Three.js (amends the renderer portion of D-010)
 - **Status:** ACCEPTED
 - **Phase:** 0 (sign-off revision)
@@ -309,6 +346,28 @@ are recorded as D-021 and D-022 below.
   steady supply of new 3D items — and D-021 limits that supply. Mitigation: hold the store
   until Phase 7 with real D1/D7 retention data. Weak retention cannot be fixed by store
   design, so waiting costs nothing and keeps the option open.
+
+---
+
+### D-024 — Asset pipeline is procedural-first, not Blender-first (awaiting confirmation)
+- **Status:** `PROPOSED` — raised by Phase 1, needs sign-off before Phase 2
+- **Phase:** 1
+- **Amends:** containment measure 5 of D-021, which assumed a Blender -> glTF pipeline.
+- **Finding:** Blender is not available in the development environment, so Phase 1 generated
+  the gremlin procedurally instead and proved the export-and-load half of the pipeline
+  (856 triangles, 8 bones, 5 animation channels, 18/18 structural checks passing).
+- **Why this may be better, not just available:** a procedural generator is versionable and
+  diffable in git, and a new cosmetic variant costs milliseconds rather than an artist's
+  afternoon. That directly attacks R11 (3D art cost vs a 1-3 person team) and raises the
+  cosmetic supply rate that F2P (D-022) depends on.
+- **Why it still needs a decision:** it produces a different *look* than hand-modelled art,
+  and it constrains what shapes are cheap. Choosing it by accident would quietly cap the art
+  direction.
+- **Options:** (a) procedural-first with hand-authored hero assets; (b) Blender-first as
+  D-021 assumed; (c) procedural for greybox and cosmetics, Blender for hero characters.
+  **Recommendation: (c)** — it keeps Phase 2 cheap while leaving the art ceiling open.
+- **Not yet verified either way:** the Blender leg was never exercised, because Blender is
+  not installed here.
 
 ---
 

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# Generated assets — regenerate with: npm run build:assets
+assets/*.glb

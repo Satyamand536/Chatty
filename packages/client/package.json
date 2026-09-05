@@ -1,0 +1,15 @@
+{
+  "name": "@chaos-kitchen/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite --config vite.config.ts" },
+  "dependencies": {
+    "@chaos-kitchen/sim": "*",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.185.0",
+    "vite": "^6.0.0"
+  }
+}
