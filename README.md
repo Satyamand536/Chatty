@@ -19,9 +19,9 @@ did it.
 
 | | |
 |---|---|
-| **Phase** | 0 — Design Foundation |
+| **Phase** | 0 — Design Foundation (complete, signed off) |
 | **Implemented** | **Nothing.** No code, no assets, no networking, no prototypes. |
-| **Next** | Phase 1 — greybox solo prototype (blocked on sign-off, see below) |
+| **Next** | Phase 1 — greybox solo prototype + 3D asset-pipeline proof |
 
 This repository currently contains design documentation only. Nothing described in these
 documents has been built.
@@ -33,19 +33,36 @@ documents has been built.
 | Document | Contents |
 |---|---|
 | **[docs/GAME_DESIGN_FOUNDATION.md](docs/GAME_DESIGN_FOUNDATION.md)** | The Phase 0 deliverable: vision, USP, audience, core loop, mechanics, fun design, MVP scope, multiplayer direction, progression, art/audio, tech stack, AI usage, phased roadmap, risks, next step. |
-| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Binding decision log (ADR-style). Future phases build on these and may not silently revise them. |
+| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Binding decision log (ADR-style, D-001…D-022). Future phases build on these and may not silently revise them. |
 
 ---
 
-## Awaiting sign-off
+## Sign-off (resolved 2026-09-05)
 
-Four decisions gate Phase 1. Recommendations are recorded in the decision log as
-`Q-A` … `Q-D`:
+| | Decision | Resolved as |
+|---|---|---|
+| **Q-A** | Distribution | **Browser-first, link-join** — as recommended |
+| **Q-B** | Team | **1–3 people, TypeScript-comfortable** — as recommended |
+| **Q-C** | Presentation | **3D stylised** — **changed** the Phase 0 recommendation (was 2D) |
+| **Q-D** | Monetisation | **Free-to-play cosmetics** — **changed** the Phase 0 recommendation (was: defer) |
 
-- **Q-A** — Distribution priority (recommended: browser-first, link-join)
-- **Q-B** — Team size and technical comfort
-- **Q-C** — 2D vs 3D presentation (recommended: 2D top-down)
-- **Q-D** — Monetisation intent (recommended: defer to Phase 7)
+**Q-C and Q-D overrode the recommendations, and both are recorded as superseding decisions**
+(D-021, D-022) rather than quietly edited in. Their consequences are treated as real:
+
+- **Q-C → 3D** changes the renderer (PixiJS → Three.js, D-020), multiplies art cost
+  ~3–5×, adds a mobile-browser performance risk, and weakens visual differentiation
+  against the genre incumbents. Tracked as risks **R11, R12, R14**.
+- **Q-D → F2P** moves the cosmetic pipeline into MVP scope (retrofitting modularity later
+  is near-rebuild cost) while keeping the store at Phase 7. Tracked as risk **R13**.
+
+The architectural core — the headless, renderer-agnostic simulation (**D-009**) — is
+**unaffected by either change**. Only `packages/client` and the art plan moved, which is
+the concrete justification for having decided the architecture before the presentation
+layer.
+
+**Still open: the name.** "CHAOS KITCHEN" collides with a live Roblox title and is treated
+as a working title only. A trademark and marketplace search is required before Phase 1
+(D-019, risk R1).
 
 ## Planned structure
 
@@ -56,12 +73,14 @@ recorded here so the intent is explicit, not because any of it has been created.
 packages/
   sim/        # Pure game logic. (state, input) -> state. No rendering, no I/O.
   server/     # Authoritative tick loop, rooms, snapshots.
-  client/     # Renderer + input. No game logic.
+  client/     # Three.js renderer + input. No game logic.
   shared/     # Protocol schema and balance data tables.
   bots/       # Headless scripted players for load and soak testing.
+assets/       # Blender sources + exported glTF, with an automated size/poly budget check.
 docs/         # Design documentation.
 ```
 
 The separation of `sim` from `client` is the load-bearing architectural decision
-([D-009](docs/DECISIONS.md)): it is what makes the whole game testable headlessly, and
-what would make a future engine port a client rewrite rather than a redesign.
+([D-009](docs/DECISIONS.md#d-009--headless-deterministic-engine-agnostic-simulation)):
+it is what makes the whole game testable headlessly, and it is why the 2D→3D decision
+(Q-C) could be absorbed by changing one package and no design decisions.

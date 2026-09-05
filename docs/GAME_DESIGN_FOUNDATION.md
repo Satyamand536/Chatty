@@ -11,10 +11,17 @@
 | | |
 |---|---|
 | **Document** | Phase 0 — Product & Design Foundation |
-| **Version** | 0.1 (draft for review) |
+| **Version** | 0.2 — **revised for sign-off** (Q-A…Q-D resolved) |
 | **Date** | 2026-09-05 |
+| **Sign-off** | **Q-A** browser-first · **Q-B** 1–3 people, TypeScript · **Q-C** **3D stylised** *(changed the Phase 0 recommendation)* · **Q-D** **free-to-play cosmetics** *(changed the Phase 0 recommendation)* |
 | **Repo state at time of writing** | Greenfield: one `README.md`, one commit (`b2277b3`) |
-| **Next phase** | Phase 1 — Greybox solo prototype (blocked on sign-off, see §14) |
+| **Next phase** | Phase 1 — Greybox solo prototype, **now unblocked** |
+
+**Revision note (v0.2).** Q-C and Q-D changed two Phase 0 recommendations. Both changes are
+recorded inline with a banner at each affected section and as superseding entries in
+[`DECISIONS.md`](./DECISIONS.md) (D-021, D-022). The architectural core — the headless,
+renderer-agnostic simulation (D-009) — is **unaffected** by either change, which is the
+practical justification for having made that decision first.
 
 ---
 
@@ -437,7 +444,8 @@ using the least possible content. Nothing else matters.
 | **Progression** | Cosmetics only: 6 hats and 4 aprons earned from 5 achievements. |
 | **Input** | Keyboard + up to 4 gamepads (same device). Three actions. |
 | **Audio** | 2 music layers (calm/chaos), ~20 SFX, gibberish gremlin vocalisations. |
-| **Art** | Functional placeholder art with **correct silhouettes and correct colour coding** (§10). Placeholder ≠ ugly; it must already be readable. |
+| **Art** | **Low-poly greybox 3D** with correct silhouettes, correct colour coding (§10.4), and the full glTF asset pipeline working end-to-end for one gremlin. Placeholder ≠ ugly; it must already be readable and must already prove the pipeline (§10.1b). |
+| **Cosmetics pipeline** | The shared-rig, socket-based attachment system, proven with the 6 MVP cosmetics. **No store, no currency** — the pipeline only. This is MVP scope *because of Q-D*: retrofitting modularity later is near-rebuild cost. |
 
 ### 6.2 Explicitly NOT in the MVP
 
@@ -452,9 +460,9 @@ using the least possible content. Nothing else matters.
 | Recipe unlocks, kitchen unlocks, challenges, leaderboards | Phase 4. |
 | Character customisation beyond hats/aprons | Phase 4. |
 | Voice chat, text chat, emotes | Phase 5 at the earliest; the ping system is the MVP substitute. |
-| Mobile touch controls | Phase 5. |
+| Mobile touch controls | Phase 5. But **mobile-browser 3D performance is measured in Phase 1** (§11.3b) — performance is not deferred, only input is. |
 | Localisation | Phase 6. |
-| Monetisation of any kind | Phase 7 decision, and likely never in the MVP sense. |
+| The store, currency, and purchases | Phase 7. Q-D decided free-to-play cosmetics, so the **cosmetic pipeline** is MVP scope (§6.1) but no money changes hands until Phase 7 with retention data in hand (§9.2). |
 | Difficulty settings | Rejected outright — the Chaos dial *is* the difficulty setting. |
 | Tutorial level | Replaced by a 45-second interactive overlay in the lobby. |
 
@@ -677,64 +685,152 @@ Phase 3 before we commit to them in the design.
 **Governing rule: no grinding.** Every unlock should be reachable in a normal session, and
 nothing gameplay-affecting should ever be locked behind time spent.
 
+### 9.1 Monetisation — decided at sign-off: free-to-play with cosmetics
+
+> **DECISION MADE (Q-D).** Free-to-play with cosmetic purchases. The **store itself is
+> still deferred to Phase 7** — what changes now is that cosmetics must be designed as a
+> pipeline from Phase 1, because retrofitting a modular cosmetic system onto finished
+> characters is close to a rebuild. See [D-022](./DECISIONS.md).
+
+**The line that must not be crossed: nothing purchasable touches gameplay.** Not the Chaos
+meter, not the score multiplier, not timers, not recipes, not station speed, not hitbox or
+carry capacity. Cosmetics only. This is not a moral position so much as a design one — the
+Chaos dial is the entire game (D-002), and any purchasable influence over it would destroy
+the one thing that makes the game worth playing.
+
+| Element | Design |
+|---|---|
+| **Currency** | Two currencies. **Tips** (earned in play, spent on cosmetics) and **Coins** (purchased). Any item buyable with Coins must also be buyable with Tips — no exclusive-to-purchase items. This is what keeps it non-predatory. |
+| **Catalogue** | Hats, aprons, gremlin colourways, pan skins, floor decals, kitchen signage, and The Bill's frame/stamp styles. Character parts must be swappable on the shared rig (§10.1b). |
+| **Pricing** | Small, direct purchases. No bundles that obscure unit price. |
+| **Earned-vs-bought parity** | Every cosmetic is reachable through play alone. Estimated time-to-unlock is displayed honestly in the UI. |
+
+**Explicitly rejected inside an F2P model** (these are the standard pressure mechanics, and
+each one contradicts a decision already made in this document):
+
+- **Loot boxes / random cosmetics** — rejected. Punishes the casual audience we target.
+- **Energy systems or play timers** — rejected. Directly antithetical to "one more round"
+  (§7.7), which is the core of the retention model.
+- **Battle passes / seasons** — rejected for v1. They demand a cosmetic content treadmill a
+  1–3 person team producing 3D assets cannot feed (§10.1b, R11).
+- **Ads** — rejected for v1. A 4-minute session has no natural ad break that isn't hostile.
+- **Pay-to-win of any kind** — rejected absolutely.
+- **Progression-gated core mechanics** — rejected. Every station and every base recipe must
+  be usable by a brand-new player. Unlocking *mechanics* is how co-op games create the
+  "new player can't join" problem documented in this genre
+  ([Nintendo Life](https://www.nintendolife.com/features/avoiding-co-op-frictions-and-frustrations-in-roguelite-restaurateur-plateup)).
+
+### 9.2 The honest business risk of this choice
+
+Stated because it is easy to skip past: **F2P cosmetics is a harder business than a
+one-time purchase for a small team.** Cosmetics revenue is a volume × conversion problem,
+and it needs a sustained supply of new 3D items to stay alive. A 1–3 person team making
+3D assets (§10.1b) has limited supply. A one-time purchase, by contrast, monetises the
+audience the link-join model already generates.
+
+The recommendation is therefore: **build the F2P cosmetic pipeline as designed, but hold
+the store until Phase 7 with real retention data in hand.** If D1/D7 retention is weak, no
+store design will fix it; if retention is strong, the store will work. Keeping the
+*pipeline* modular costs little now; keeping the *option* open costs nothing. This is
+recorded as risk R13.
+
+### 9.3 Progression systems
+
 | System | Design | Anti-grind guarantee |
 |---|---|---|
 | **Shift grade** | D–S per shift, based on revenue vs. a player-count-scaled target | No XP, no levels, no XP bars anywhere in the UI |
 | **Recipe unlocks** | A new "Special" appears as a one-off ticket. Serve it successfully 3 times *across any shifts* and it joins the permanent menu | ~2–3 shifts per recipe, and you earn it by playing normally |
 | **Kitchen unlocks** | 3 kitchens total: The Diner (default), The Fish Market, The Space Galley | ~3 hours of play unlocks all three. No kitchen is gated behind a paywall or a skill wall |
-| **Cosmetics** | Hats, aprons, pan skins, floor decals, kitchen signage | Earned from achievements only. Never sold in a way that affects play |
+| **Cosmetics** | Earned with Tips from achievements and grades, or purchased with Coins (§9.1) | Every item reachable through play alone |
 | **Challenges** | Weekly modifier sets with a shared global goal and personal bests | Optional. Never required for any unlock |
 | **Achievements** | ~30, all joke-framed ("Arsonist: extinguish 10 fires", "Health Code? Never heard of her") | Pure cosmetic reward |
 | **The Bill history** | Your last 20 shifts kept locally, scrollable | Creates a personal story log at zero design cost |
-
-### Explicitly rejected
-
-- **Pay-to-win** — rejected absolutely.
-- **Loot boxes / random cosmetics** — rejected. Randomness in reward punishes exactly the
-  casual audience we are targeting.
-- **Energy systems / timers** — rejected. Antithetical to "one more round."
-- **Battle passes / seasons** — rejected for v1. They require a content treadmill we
-  cannot feed (§7.6).
-- **Progression-gated core mechanics** — rejected. Every station and every recipe must be
-  usable by a brand-new player. Unlocking *mechanics* is how co-op games create the
-  "new player can't join" problem documented in this genre
-  ([Nintendo Life](https://www.nintendolife.com/features/avoiding-co-op-frictions-and-frustrations-in-roguelite-restaurateur-plateup)).
-
-**Monetisation direction (if any, decided in Phase 7):** a single one-time purchase
-covering up to 4 players, or free-with-cosmetics. Both keep the game non-predatory. This
-decision is deliberately deferred — it must not influence MVP design.
 
 ---
 
 ## 10. Art and Audio Direction
 
-### 10.1 Art direction — "Diner Cartoon"
+### 10.1 Art direction — "Diner Cartoon" in 3D
 
-**Flat-vector, thick-outline, top-down 2D.** Saturday-morning cartoon by way of roadside
-diner signage. Bold shapes, no gradients, no realistic lighting, no 3D.
+> **DECISION CHANGED AT SIGN-OFF (Q-C).** Phase 0 originally recommended 2D top-down.
+> Sign-off selected **3D stylised**. This section reflects 3D. See [D-021](./DECISIONS.md),
+> which supersedes [D-017](./DECISIONS.md). The cost consequences are recorded honestly
+> below and as risk [R11](#14-major-risks) — they are real and are managed, not ignored.
 
-Why this and not alternatives:
+**Low-poly stylised 3D with a fixed ¾ overhead camera.** Saturday-morning cartoon by way of
+roadside diner signage: chunky forms, flat-ish shading with soft ramps, bold readable
+silhouettes, exaggerated squash-and-stretch. Think *toy* proportions, not realism.
 
-| Alternative | Why rejected |
+**The specific 3D sub-style is a hard constraint, not a preference: low-poly, flat-shaded,
+no PBR, no real-time shadows on dynamic objects, no post-processing chains.** This is what
+keeps a 3D game affordable for a 1–3 person team (Q-B) and performant in a browser and on
+mobile browsers (Q-A). A realistic or PBR-stylised 3D direction would break both
+constraints and is explicitly out of scope.
+
+| Alternative | Why not chosen |
 |---|---|
-| 3D stylised (the genre default) | Expensive, slow to iterate, harder to keep readable, and puts us visually adjacent to the incumbent titles. 2D is cheaper, faster, and *more* distinct here. |
-| Pixel art | Cheap, but reads as retro rather than cartoon, and struggles with the exaggerated squash-and-stretch this game needs. |
-| Realistic | Antithetical to tone. |
+| **2D flat-vector** (original Phase 0 recommendation) | Cheapest and most visually distinct from the incumbents. **Rejected at sign-off** in favour of matching genre audience expectations and perceived production value. |
+| Realistic 3D | Antithetical to tone; unaffordable at this team size. |
+| Pixel art | Reads retro rather than cartoon; weak squash-and-stretch. |
+| Voxel | Cheaper than mesh art, but locks characters into a rigid look that fights the comedy. |
+
+**Camera:** fixed ¾ overhead, no player camera control, no zoom during play. Slight
+dynamic pull-back at high Chaos so the whole kitchen stays legible. A controllable camera
+would break both readability and the network model (§8.4).
 
 **Originality constraint (project rule 5):** all characters, props, UI, and branding are
 original designs. We are working in an established genre, so similarity of *concept* is
 unavoidable and legitimate — but no asset, character design, UI layout, name, or brand
 element may be derived from an existing title. Concrete guardrails: our cooks are gremlins
 rather than human chefs; our UI is a paper receipt/diner-ticket motif rather than a wooden
-board; our camera is fixed top-down with no tilt.
+board; our camera angle and framing differ from the genre incumbents.
+
+**Note the tension this creates.** The 3D choice moves us *closer* to the visual language
+of the incumbent titles, which increases reliance on the gremlin character identity, the
+receipt-motif UI, and the Chaos mechanic to carry differentiation. That is an accepted
+trade-off of Q-C, and it raises the importance of D-002.
+
+### 10.1b The cost problem this creates, and how we contain it
+
+Stated plainly, because it is the largest new risk in the project: **3D multiplies art cost
+roughly 3–5× versus 2D** — modelling, UVing, rigging, skinning, texturing, and an
+export/validate pipeline, versus drawing sprites. With a 1–3 person team (Q-B) and a
+cosmetics economy that needs a continuous supply of items (Q-D), this is the single most
+likely cause of schedule failure.
+
+Containment measures, all of which are requirements rather than aspirations:
+
+1. **Modular asset kit from day one.** Characters are built from swappable parts
+   (head/ears, body, hat, apron, held-item) on a single shared rig. Every cosmetic must
+   attach without a new rig or new animation set. This is what makes F2P cosmetics
+   affordable at all.
+2. **One shared skeleton for all gremlins.** No per-character rigs in v1.
+3. **Procedural material variation.** Colour and decal swaps generate most cosmetic
+   variants from a handful of base meshes.
+4. **A hard asset budget, set before Phase 1 and not raised:** MVP needs 4 characters,
+   ~14 kitchen props, ~10 food items, and 6 cosmetics. If the list grows, something is
+   removed.
+5. **An asset-pipeline proof in Phase 1**, not Phase 5: one gremlin modelled, rigged,
+   animated, exported to glTF, and rendering in the browser. If that pipeline is slow or
+   painful, we learn it in week 2 rather than month 6. **This is the specific de-risking
+   step that the 3D decision makes necessary.**
 
 ### 10.2 Character style
 
 Small, round, big-eyed gremlin line cooks, roughly 1:1 head-to-body. Exaggerated limbs for
-readable animation at small scale. Each is distinguished by **silhouette and one accent
-colour**, never by face detail (faces are unreadable at game scale). Distinctive ears,
-horns, or antennae per character so player identification works at a glance and in
-colourblind conditions.
+readable animation at game distance. Each is distinguished by **silhouette and one accent
+colour**, never by face detail (faces are unreadable at game distance, even in 3D).
+Distinctive ears, horns, or antennae per character so player identification works at a
+glance and in colourblind conditions.
+
+**3D-specific requirements:**
+- Character meshes must remain readable against a busy 3D kitchen, so each player gets a
+  coloured ground ring and a small overhead marker. In 3D this is not optional polish —
+  losing track of your own character is the most common readability failure in the genre.
+- All cosmetics attach to shared sockets on one rig (see §10.1b). No cosmetic may alter
+  the character's collision or silhouette enough to affect play.
+- Target under ~1,500 triangles per gremlin including attachments, so 4 players plus a
+  full kitchen stay inside a mobile-browser budget.
 
 *Note:* "gremlin" as a general folklore monster is fine to use; the specific 1984 film
 creature designs are not. Original designs only — this is a legal guardrail, not a style
@@ -746,6 +842,10 @@ Chunky, oversized equipment (readable at a glance), checkered diner floors, warm
 lighting, and clutter that is *decorative only* — no gameplay-relevant object may be
 visually ambiguous with a prop. As Chaos rises, the kitchen's presentation degrades:
 lights flicker, saturation shifts warm, smoke accumulates, and floor decals layer up.
+
+**Lighting rule:** baked or vertex lighting for the static kitchen; only a small number of
+dynamic lights (fire, flicker, the pass window) and they are capped. Full dynamic lighting
+is unaffordable in a browser and on mobile, and adds nothing to readability.
 
 ### 10.4 Colour and readability principles
 
@@ -766,6 +866,14 @@ Non-negotiable rules, ordered by priority:
    saturation shift. Never screen shake that impairs aim, never smoke that hides items.
 6. **Player characters are the highest-contrast elements on screen, always.** A player must
    be able to find themselves in under a second in a full-chaos kitchen.
+7. **No occlusion of gameplay objects. (New requirement introduced by the 3D decision.)**
+   In 2D nothing can hide behind anything. In 3D, tall props, shelves, and character models
+   can occlude food, stations, and other players. Therefore: nothing gameplay-relevant may
+   be placed behind anything taller than the counter line, the camera angle is fixed to
+   guarantee sight lines across the whole kitchen, and any prop that would break a sight
+   line is shortened or removed. **This rule must be validated on the actual kitchen
+   layout, not assumed** — it is the most common way a 3D top-down game quietly becomes
+   unreadable.
 
 ### 10.5 Animation priorities
 
@@ -779,6 +887,12 @@ In build order — this is where the budget goes:
 5. **Disaster anticipation frames** — the 0.6–1.0 s tell (§5.8). Fairness depends on this.
 6. **Customer enter/exit + mood faces** — 3 moods, big and readable.
 7. **Idle gremlin behaviour** — cheap personality; fidgets, glances at the camera.
+
+**3D note:** items 1–3 are skeletal animation on a shared rig and are the bulk of the art
+budget. Items 4–7 are largely achievable with procedural transforms (scale pop, particle
+systems, shader swaps) rather than hand-keyed animation, which is where a small team saves
+the most time in 3D. **Prefer procedural presentation over hand-animated wherever the
+result is equally readable** — this is the main lever for making a 3D art budget survivable.
 
 ### 10.6 Sound effects
 
@@ -847,7 +961,15 @@ editor. That asymmetry is worth stating plainly when choosing a stack.
 ### 11.3 Recommendation
 
 **TypeScript monorepo, headless deterministic simulation package, Node authoritative
-server, PixiJS renderer, WebSocket transport, Vite build, Vitest test runner.**
+server, Three.js renderer, WebSocket transport, Vite build, Vitest test runner.**
+
+> **Renderer changed at sign-off.** The original Phase 0 recommendation was PixiJS (2D).
+> Q-C selected 3D, so the renderer is **Three.js**. Everything else in the stack is
+> unchanged, and — importantly — **the architectural core (D-009) is completely unaffected
+> by the switch from 2D to 3D.** The simulation is still pure `(state, input) -> state`
+> with no rendering dependency; only `packages/client` changes. That the presentation
+> layer could be swapped by changing one package and zero design decisions is the
+> concrete payoff of the sim/client separation.
 
 ```
 chaos-kitchen/
@@ -855,11 +977,19 @@ chaos-kitchen/
     sim/        # THE GAME. Pure TS. No rendering, no I/O, no globals.
                 # (state, input) -> state. Deterministic. Fully unit-testable.
     server/     # Node + ws. Room management, authoritative tick loop, snapshots.
-    client/     # PixiJS renderer + input. Renders sim state. No game logic.
+    client/     # Three.js renderer + input. Renders sim state. No game logic.
     shared/     # Types, protocol schema, data tables (recipes, chaos, balance).
     bots/       # Headless scripted players for load and soak testing.
+  assets/       # Blender sources + exported glTF. Validated by a size/poly budget check.
   docs/         # This document and the decision log.
 ```
+
+**Renderer choice within the web stack.** Three.js over Babylon.js: both are capable, but
+Three.js has the larger ecosystem, the better glTF tooling, and — decisive for a 1–3
+person team (Q-B) — the far larger pool of documentation, examples, and hireable
+familiarity. Babylon.js's stronger built-in engine features (its own GUI, inspector,
+physics integration) are features we deliberately do not need, because the simulation owns
+all game state and we want no engine-side physics authority.
 
 **Why this stack, in priority order:**
 
@@ -870,7 +1000,8 @@ chaos-kitchen/
 2. **One language across sim, server, and client** eliminates protocol translation bugs —
    a leading cause of netcode defects.
 3. **The invite is a URL.** Our entire acquisition model (§7.8) depends on frictionless
-   join. No native engine can do that without a wrapper.
+   join, and Q-D's free-to-play model depends on it even more — a purchase wall and a
+   share-card growth loop work against each other.
 4. **It is the only option that runs, builds, tests, and serves in this environment today**,
    which means every future phase is immediately verifiable rather than theoretically
    verifiable.
@@ -882,11 +1013,38 @@ players, low entity count, no physics authority needs), our differentiator is sy
 data rather than rendering, and our distribution model is link-based. We would pay Unity's
 costs and use none of its strengths.
 
-**Why not Godot:** Godot is the strongest *native* alternative and I would choose it over
-Unity for this game if native were required. It is free, fast, and superb at 2D. It loses
-here on two points only: instant link-based playtesting, and headless testability of the
-simulation. If the platform decision in §15 changes to "native first," **Godot 4 is the
-recommended switch**, and this document's design sections carry over unchanged.
+**Why not Godot:** Godot is the strongest *native* alternative — free, MIT-licensed, good
+2D and competent 3D. It loses here on two points: instant link-based playtesting, and
+headless testability of the simulation. **The 3D decision (Q-C) widens that gap rather than
+narrowing it**: Godot's web export produces a large WASM bundle with slow initial load and
+historically fragile mobile-browser support, which directly conflicts with a link-join,
+mobile-friendly, free-to-play acquisition model. Q-A and Q-C together point more firmly at
+a web-native renderer than either would alone. If the platform decision is ever reversed to
+"native first," **Godot 4 remains the recommended switch**, and this document's design
+sections carry over unchanged.
+
+### 11.3b New technical risk introduced by 3D in a browser
+
+Recorded because Q-A and Q-C were chosen independently and their interaction was not
+previously a risk:
+
+**3D rendering in a mobile browser is the weakest link in the platform plan.** Free-to-play
+plus link-join implies a large share of players arriving on phones (Q-D + Q-A), and mobile
+browsers are the least forgiving 3D target — constrained draw calls, aggressive thermal
+throttling, and inconsistent WebGL driver behaviour.
+
+Mitigations, all requirements:
+- The low-poly, flat-shaded, no-PBR, capped-dynamic-lights constraint in §10.1 is what
+  makes this viable. It is a *performance* constraint wearing an art-direction costume.
+- Hard budgets enforced by an automated asset check: draw calls per frame, triangle count,
+  texture memory, and glTF bundle size.
+- A scalable quality tier: full on desktop, reduced particles/lighting/effects on mobile.
+- **A mobile-browser performance checkpoint in Phase 1**, using the greybox kitchen. If a
+  mid-range phone cannot hold 60 fps with 4 players and a full-chaos kitchen in greybox,
+  the art budget must shrink or the platform plan must be revisited — and it is far better
+  to learn that in week 2 than in Phase 5.
+- Fallback: a 2D sprite render path for the lowest tier remains *architecturally possible*
+  because the sim is renderer-agnostic (D-009), but it is **not planned and not budgeted**.
 
 ### 11.4 Accepted trade-offs — stated honestly
 
@@ -984,17 +1142,26 @@ Changing something behind a gate requires a written entry in `DECISIONS.md`.
 ### Phase 1 — Greybox Solo Prototype
 
 - **Objective:** prove the loop is fun with **one** human, before spending anything on
-  networking or art.
+  networking or art — **and prove the 3D asset pipeline and mobile-browser performance
+  budget before committing to an art direction.**
 - **Features:** The Diner layout (greybox); 3 recipes; the Chaos meter with tiers 1–2;
   hold-to-progress interactions; 4-slot ticket rail; 240 s timer; scoring and grade; a
   stub Bill; keyboard input.
 - **Deliverables:** a playable browser build; the `sim` package with unit tests; balance
-  data tables.
-- **Dependencies:** Phase 0 sign-off.
+  data tables; **one gremlin modelled → rigged → animated → exported to glTF → rendering in
+  the browser**; **a mobile-browser performance report on the greybox kitchen**.
+- **Dependencies:** Phase 0 sign-off. ✅ received.
 - **Verification:** `sim` unit tests green in CI; a human can complete a full shift;
-  10 solo playtests, ≥ 6/10 rate the core cooking loop ≥ 7/10.
-- **Must NOT change yet:** no networking code of any kind, no art beyond readable
-  placeholders, no progression, no online anything. **No second kitchen, no fourth recipe.**
+  10 solo playtests, ≥ 6/10 rate the core cooking loop ≥ 7/10; **the glTF pipeline round-trip
+  is under ~30 minutes of human effort per character variant**; **a mid-range phone holds
+  60 fps with 4 players and a full-chaos greybox kitchen** (§11.3b).
+- **Failure branches that must be pre-agreed, so they are decisions rather than surprises:**
+  if the asset pipeline is slow, the art budget shrinks or the style simplifies; if mobile
+  3D cannot hold frame rate, the platform plan is reopened at this gate rather than in
+  Phase 5.
+- **Must NOT change yet:** no networking code of any kind, no finished art beyond the one
+  pipeline-proof character, no progression, no online anything, **no store or currency**.
+  **No second kitchen, no fourth recipe.**
 
 ---
 
@@ -1051,14 +1218,22 @@ Changing something behind a gate requires a written entry in `DECISIONS.md`.
 
 ### Phase 5 — Art and Audio Identity
 
-- **Objective:** replace placeholders with the real "Diner Cartoon" identity.
+- **Objective:** replace greybox with the real "Diner Cartoon" 3D identity.
+- **Scope warning:** this is the **largest and highest-risk phase in the plan**, because
+  Q-C chose 3D and Q-B is a 1–3 person team (§10.1b, R11). It should be scheduled with an
+  explicit asset budget and a per-asset time box, and it is the phase most likely to need
+  a scope reduction. The Phase 1 pipeline proof exists specifically to make this
+  estimable rather than guessable.
 - **Features:** full character and kitchen art; all animation priorities from §10.5;
-  layered music system; full SFX set; the ding, properly produced.
-- **Deliverables:** a shippable-looking build; an art bible; an audio asset list.
+  layered music system; full SFX set; the ding, properly produced; the cosmetic attachment
+  set complete.
+- **Deliverables:** a shippable-looking build; an art bible; an audio asset list; an asset
+  budget report against the Phase 1 pipeline measurement.
 - **Dependencies:** Phase 4 (content complete, so art is made once).
-- **Verification:** readability test at 720p and on a 6" phone; **colourblind simulation
-  pass across all three deficiency types**; a blind test where a new player can identify
-  every station and food state without instruction.
+- **Verification:** readability test at 720p **and on a 6" phone**; the occlusion rule
+  (§10.4 rule 7) validated on the real kitchen layout; **colourblind simulation pass across
+  all three deficiency types**; a blind test where a new player can identify every station
+  and food state without instruction; the mobile frame-rate budget still met with final art.
 - **Must NOT change yet:** no gameplay or balance changes. Art serves the design, not the
   reverse.
 
@@ -1117,37 +1292,59 @@ The order is deliberate and each dependency is a risk-reduction step:
 | **R8** | **Scope creep.** The genre invites "just one more station." | High | High | The MVP list (§6) and the per-phase "must NOT change yet" gates. Every addition requires a removal. |
 | **R9** | **Genre comparison.** Players will say "it's Overcooked." | High | Medium | Accept it and use it. Marketing leans on the twist: chaos pays, and the game keeps score of who caused it. Do not fight the comparison; do not copy the assets. |
 | **R10** | **Solo play feels like a compromise.** | High | Low | Accepted deliberately (§3, tertiary audience). Do not spend against it. |
+| **R11** | **NEW (from Q-C + Q-B): 3D art cost vs. a 1–3 person team.** 3D costs roughly 3–5× 2D in modelling, rigging, and pipeline work, and F2P cosmetics (Q-D) then demands a *continuous* supply of 3D items. **This is the most likely cause of schedule failure in the project.** | **High** | **High** | The five containment measures in §10.1b: shared rig, modular swappable parts, procedural material variants, a hard asset budget fixed before Phase 1, and a pipeline proof in Phase 1. If the Phase 1 round-trip exceeds ~30 min per variant, the style simplifies or the budget shrinks — decided at that gate, not later. |
+| **R12** | **NEW (from Q-A + Q-C): 3D performance in mobile browsers.** Link-join plus free-to-play implies many phone players, and mobile browsers are the least forgiving 3D target. This risk did not exist under the 2D recommendation. | Medium | **High** | Low-poly/flat-shaded/no-PBR constraint (§10.1); automated draw-call, poly, texture, and bundle budgets; a scalable quality tier; and a **mobile frame-rate checkpoint in Phase 1 on the greybox kitchen** (§11.3b). A 2D fallback path stays architecturally possible via D-009 but is **not budgeted**. |
+| **R13** | **NEW (from Q-D): F2P cosmetics is a harder business than a one-time purchase for a small team** — it needs volume, conversion, and a steady supply of new 3D items (§10.1b limits supply). | Medium | Medium | Build the pipeline now; **hold the store until Phase 7** with real D1/D7 retention data (§9.2). Weak retention cannot be fixed by store design, so there is nothing to lose by waiting. |
+| **R14** | **NEW (from Q-C): 3D moves us visually closer to the genre incumbents**, weakening visual differentiation and increasing reliance on the gremlin identity, the receipt-motif UI, and the Chaos mechanic to carry it. | Medium | Medium | Accepted as a trade-off of Q-C. Raises the importance of D-002 and of the character/UI identity. Do not respond by copying incumbent visual language — that is both a differentiation and an IP failure. |
 
 ---
 
 ## 15. Recommended Next Step
 
-### Immediate action, before any code
+### Sign-off status
+
+All four gating decisions are **resolved** as of 2026-09-05:
+
+| # | Decision | Phase 0 recommendation | **Your decision** | Effect |
+|---|---|---|---|---|
+| A | Distribution priority | Browser-first, link-join | **Browser-first, link-join** | Confirmed. Stack stands. |
+| B | Team size / tech comfort | 1–3 people, TS-comfortable | **1–3 people, TS-comfortable** | Confirmed. Stack stands. |
+| C | 2D vs 3D | 2D top-down | **3D stylised** | **Changed.** Renderer → Three.js; new art-cost and mobile-performance risks (R11, R12); see D-021 |
+| D | Monetisation | Defer to Phase 7 | **Free-to-play cosmetics** | **Changed.** Cosmetic pipeline becomes MVP scope; store still Phase 7; see D-022 |
+
+The stack itself survives both changes intact, because the simulation is
+renderer-agnostic (D-009). Only `packages/client` and the art plan moved.
+
+### Immediate actions
 
 **1. Resolve the name (blocking, ~1 day).**
 Run a trademark and marketplace search for "Chaos Kitchen" in the target territories. A
 collision already exists on Roblox (R1). Decide: keep with a distinctive subtitle/mark, or
-rename. This is cheap now and expensive after art, audio, and a storefront exist.
+rename. This is cheap now and expensive after art, audio, and a storefront exist — and
+**under a free-to-play model it matters more**, because a name change after launch means
+losing accumulated search and share-card traffic.
 
-**2. Get sign-off on four gating decisions.**
-These change the shape of Phase 1 and are the only genuinely uncertain items in this
-document. They are put to you in the accompanying questions:
+**2. Then start Phase 1 — greybox solo prototype.**
+Two deliverables run in parallel, because Q-C made the second one necessary:
 
-| # | Decision | My recommendation | Why it's uncertain |
-|---|---|---|---|
-| A | **Distribution priority** | Browser-first, link-join | If Steam/console is the real commercial goal, Godot or Unity is the better long-term bet (§11.3) and we should switch *now*, not at Phase 4 |
-| B | **Team size and technical comfort** | Assumed 1–3 people, TypeScript-comfortable | A C#-only or artist-led team changes the stack recommendation entirely |
-| C | **2D vs. 3D** | 2D top-down | 3D is the genre norm and some audiences expect it; 2D is cheaper and more distinct, but it is a real audience-expectation bet |
-| D | **Monetisation intent** | One-time purchase or free + cosmetics, decided at Phase 7 | Only matters that it must not leak into MVP design |
+- **`sim` package** — the game state model, the Chaos meter, three recipes, and a headless
+  test suite, with a minimal Three.js greybox renderer attached so a human can play it.
+- **Pipeline and performance proof** — one gremlin modelled, rigged, animated, exported to
+  glTF, and rendering in the browser; plus a mobile-browser frame-rate measurement on the
+  greybox kitchen. **This is the specific risk the 3D decision introduced, and it must be
+  retired in week 2, not month 6.**
 
-**3. Then start Phase 1 — greybox solo prototype.**
-Concretely, the first deliverable is the `sim` package: the game state model, the Chaos
-meter, three recipes, and a headless test suite — with a minimal renderer attached so a
-human can actually play it. Nothing else. No art, no networking, no progression.
+Nothing else. No finished art, no networking, no progression, no store.
 
-**The Phase 1 gate is a single question: is standing in this kitchen fun for four minutes
-with no art, no sound, and no other players?** If it isn't, nothing downstream will save
-it, and we find that out in weeks rather than months.
+### The two Phase 1 gates
+
+1. **Is standing in this kitchen fun for four minutes with no art, no sound, and no other
+   players?** If it isn't, nothing downstream will save it.
+2. **Can a 1–3 person team actually afford this art direction?** If the glTF round-trip is
+   slow or a mid-range phone can't hold frame rate, the style or the platform plan is
+   reopened *here*, while the cost of changing it is still near zero.
+
+Both questions are answerable in weeks. That is the point of the phase.
 
 ---
 

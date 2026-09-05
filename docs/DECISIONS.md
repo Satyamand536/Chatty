@@ -8,17 +8,17 @@ Status values: `ACCEPTED` (binding) · `PROPOSED` (awaiting sign-off) · `SUPERS
 
 ---
 
-## Open decisions awaiting sign-off
+## Gating decisions — RESOLVED 2026-09-05
 
-These four gate Phase 1. See §15 of
-[GAME_DESIGN_FOUNDATION.md](./GAME_DESIGN_FOUNDATION.md).
+All four are now binding. Q-C and Q-D **changed** the Phase 0 recommendation; the effects
+are recorded as D-021 and D-022 below.
 
-| ID | Decision | Recommendation | Status |
-|---|---|---|---|
-| Q-A | Distribution priority | Browser-first, link-join | `PROPOSED` |
-| Q-B | Team size / technical comfort | Assumed 1–3 people, TS-comfortable | `PROPOSED` |
-| Q-C | 2D vs 3D presentation | 2D top-down | `PROPOSED` |
-| Q-D | Monetisation intent | Deferred to Phase 7; must not influence MVP | `PROPOSED` |
+| ID | Decision | Phase 0 recommendation | **Resolved as** | Status |
+|---|---|---|---|---|
+| Q-A | Distribution priority | Browser-first, link-join | **Browser-first, link-join** | `ACCEPTED` (confirms D-007, D-010) |
+| Q-B | Team size / technical comfort | 1–3 people, TS-comfortable | **1–3 people, TS-comfortable** | `ACCEPTED` (confirms D-010) |
+| Q-C | 2D vs 3D presentation | 2D top-down | **3D stylised** — recommendation overridden | `ACCEPTED` → **D-021** |
+| Q-D | Monetisation intent | Defer to Phase 7 | **Free-to-play cosmetics** — recommendation overridden | `ACCEPTED` → **D-022** |
 
 ---
 
@@ -129,11 +129,11 @@ These four gate Phase 1. See §15 of
 - **Trade-off accepted:** some upfront architectural cost; a 20 Hz tick rate is an
   unvalidated assumption until Phase 3 latency testing.
 
-### D-010 — Technology stack: TypeScript monorepo, Node server, PixiJS renderer
-- **Status:** ACCEPTED (conditional on Q-A and Q-B)
+### D-010 — Technology stack: TypeScript monorepo, Node server, Three.js renderer
+- **Status:** ACCEPTED (confirmed by Q-A and Q-B; renderer amended by D-020)
 - **Phase:** 0
 - **Decision:** `sim` / `server` / `client` / `shared` / `bots` packages. Node + `ws`
-  transport, PixiJS rendering, Vite build, Vitest tests.
+  transport, renderer per D-020, Vite build, Vitest tests.
 - **Rationale:** One language across sim/server/client eliminates protocol translation
   bugs; the sim is directly testable; a URL is the invite; and it is the only option that
   builds, tests, and serves in the current development environment.
@@ -206,7 +206,8 @@ These four gate Phase 1. See §15 of
   accessibility options in Phase 6.
 
 ### D-017 — Art direction: 2D flat-vector "Diner Cartoon" with original gremlin staff
-- **Status:** ACCEPTED (conditional on Q-C)
+- **Status:** **SUPERSEDED BY D-021** (2026-09-05, sign-off Q-C selected 3D). Retained for
+  the audit trail per the change procedure — do not delete.
 - **Phase:** 0
 - **Decision:** Top-down 2D, thick outlines, flat colour, squash-and-stretch. Original
   gremlin designs. No asset, character, UI layout, or brand element derived from any
@@ -234,6 +235,80 @@ These four gate Phase 1. See §15 of
 - **Rationale:** Cheap to resolve now; expensive after art, audio, and a storefront exist.
 - **Trade-off accepted:** naming work may reopen. Deliberately preferred over discovering
   it at launch.
+
+### D-020 — Renderer is Three.js (amends the renderer portion of D-010)
+- **Status:** ACCEPTED
+- **Phase:** 0 (sign-off revision)
+- **Supersedes:** the renderer named in D-010 (PixiJS). The rest of D-010 is unchanged.
+- **Decision:** `packages/client` renders with **Three.js**. Chosen over Babylon.js for
+  ecosystem size, glTF tooling, and hireable familiarity — decisive for a 1–3 person team
+  (Q-B). Babylon's built-in engine features are ones we deliberately do not want, since the
+  simulation owns all game state and we want no engine-side physics authority.
+- **Trigger:** Q-C selected 3D; a 2D renderer cannot serve it.
+- **Evidence the architecture held:** this change touched **one package and zero design
+  decisions**. The simulation (D-009) has no rendering dependency, so a 2D→3D switch is a
+  client concern only. This is the concrete payoff of D-009 and the reason it was decided
+  before the presentation layer.
+- **Trade-off accepted:** Three.js is a library, not an engine — no built-in editor,
+  inspector, or asset browser. Accepted, because the greybox-to-glTF pipeline is scripted
+  and testable, which an editor would not give us.
+
+### D-021 — Art direction is 3D stylised low-poly, not 2D
+- **Status:** ACCEPTED
+- **Phase:** 0 (sign-off revision)
+- **Supersedes:** D-017
+- **Decision:** Low-poly stylised 3D with a fixed ¾ overhead camera, flat-ish shading, no
+  PBR, no dynamic shadows on dynamic objects, capped dynamic lights, no post-processing
+  chains. Original gremlin designs retained from D-017.
+- **Trigger:** Q-C.
+- **Why the sub-style is a hard constraint:** low-poly/flat-shaded is what keeps 3D
+  affordable for a 1–3 person team (Q-B) and performant in desktop *and mobile* browsers
+  (Q-A). A realistic or PBR-stylised direction breaks both and is out of scope.
+- **Alternatives:** 2D flat-vector (D-017 — cheaper, more visually distinct, rejected at
+  sign-off); realistic 3D (unaffordable); voxel (too rigid for the comedy).
+- **Trade-offs accepted, recorded as risks:**
+  - **R11** — 3D art costs roughly 3–5× 2D, against a 1–3 person team that must also feed a
+    continuous F2P cosmetic supply (D-022). **The most likely cause of schedule failure.**
+  - **R12** — 3D in mobile browsers is the weakest link in a link-join, mobile-friendly,
+    free-to-play platform plan. This risk did not exist under D-017.
+  - **R14** — 3D moves us visually closer to the genre incumbents, weakening visual
+    differentiation.
+- **Containment (requirements, not aspirations):** shared rig and swappable modular parts;
+  procedural material variants; a hard asset budget fixed before Phase 1 (4 characters,
+  ~14 props, ~10 food items, 6 cosmetics); **a glTF pipeline proof in Phase 1**; **a
+  mobile-browser frame-rate checkpoint in Phase 1**. Both proofs exist to retire R11/R12
+  in week 2 rather than in Phase 5.
+- **New requirement introduced by this decision:** the no-occlusion rule
+  (§10.4 rule 7). In 2D nothing hides behind anything; in 3D, props and characters can
+  occlude food, stations, and players. Fixed camera angle and a validated layout are
+  mandatory. This is the most common way a 3D top-down game quietly becomes unreadable.
+
+### D-022 — Monetisation is free-to-play with cosmetics; the store is still Phase 7
+- **Status:** ACCEPTED
+- **Phase:** 0 (sign-off revision)
+- **Supersedes:** the "deferred, decide in Phase 7" position in D-014. D-014's prohibitions
+  (no pay-to-win, no loot boxes, no energy systems, no seasons) all remain in force.
+- **Decision:** Free-to-play with cosmetic purchases. Two currencies (earned **Tips**,
+  purchased **Coins**); every item buyable with Coins must also be buyable with Tips.
+  **Nothing purchasable touches gameplay** — not the Chaos meter, score multiplier, timers,
+  recipes, or station speed. The **store itself is deferred to Phase 7**, but the **cosmetic
+  pipeline is MVP scope**.
+- **Trigger:** Q-D.
+- **Why the pipeline is MVP scope while the store is not:** cosmetics require modular,
+  socket-based attachments on a shared rig. Retrofitting modularity onto finished characters
+  is close to a rebuild, so the pipeline must be built in from the start. The store, by
+  contrast, is a leaf feature that can be added at any time.
+- **Why the hard line on gameplay:** the Chaos dial *is* the game (D-002). Any purchasable
+  influence over it destroys the one thing that makes the game worth playing. This is a
+  design constraint before it is an ethical one.
+- **Alternatives:** one-time purchase covering 4 players (simpler business for a small
+  team, but adds a purchase wall in front of a link-join growth loop); ads (rejected — a
+  4-minute session has no non-hostile ad break).
+- **Trade-off accepted, recorded as R13:** F2P cosmetics is a harder business than a
+  one-time purchase for a 1–3 person team, because it needs volume, conversion, and a
+  steady supply of new 3D items — and D-021 limits that supply. Mitigation: hold the store
+  until Phase 7 with real D1/D7 retention data. Weak retention cannot be fixed by store
+  design, so waiting costs nothing and keeps the option open.
 
 ---
 
