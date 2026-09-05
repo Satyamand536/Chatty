@@ -19,11 +19,11 @@ did it.
 
 | | |
 |---|---|
-| **Phase** | 2 — Playable greybox prototype |
-| **Implemented** | Headless deterministic simulation (`packages/sim`), procedural glTF pipeline (`packages/assets`), and a **playable single-player greybox shift** (`packages/client`). **No networking. No local multiplayer yet — that is Phase 3.** |
-| **Verified** | 46 tests passing (incl. full-shift soak at 1/2/4 players), typecheck clean, production build clean, 18/18 glTF checks |
-| **Not verified** | **Everything visual.** There is no browser in this environment — I tried installing Chromium and the download is blocked. Rendering, HUD, and feel are unverified by me and need your eyes. Also unverified: phone frame rate, and the Blender authoring leg. |
-| **Next** | Human playtest of the greybox (Phase 2 gate), then Phase 3 — local multiplayer |
+| **Phase** | 3 — Local multiplayer built. Phase 2 greybox complete but **not yet human-playtested**. |
+| **Implemented** | Headless deterministic simulation (`packages/sim`), procedural glTF pipeline (`packages/assets`), a **playable greybox shift** (`packages/client`), and **1–4 cooks on one shared screen** — keyboard cluster per player, Gamepad API, touch stick, per-player colour/ring/highlight, per-cook HUD strip, lobby cook-count picker. **No networking yet — that is Phase 7 per D-023.** |
+| **Verified** | 86 tests passing (incl. full-shift soak at 1/2/4 players, headless scene-graph checks, and the local-multiplayer input wiring driven through the real `step()`), typecheck clean, production build clean, 18/18 glTF checks |
+| **Not verified** | **Rasterised output.** There is no browser in this environment — I tried installing Chromium and the download is blocked — so I have never seen a single frame of this game. Scene *construction* is tested headlessly (positions, colours, geometry), but pixels, HUD legibility, camera framing, game feel and phone frame rate all need your eyes. Also unverified: the Blender authoring leg. The preview panel has repeatedly failed to reach the dev server. |
+| **Next** | **Human playtest** — this is the blocker. Both Phase 2 and Phase 3 are gated on a person actually playing it, which I cannot do from here. Then Phase 4: fun + content. |
 
 ---
 
