@@ -79,7 +79,8 @@ scene.add(playerRoot);
 // Simulation driver
 // ---------------------------------------------------------------------------
 
-let sim: SimState = createShift({ seed: 2026, playerCount: 1 });
+// Start paused in the lobby. `step` is a no-op unless phase === 'playing'.
+let sim: SimState = { ...createShift({ seed: 2026, playerCount: 1 }), phase: 'lobby' };
 let accumulator = 0;
 let lastTime = performance.now();
 let running = true;
@@ -100,6 +101,63 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => keys.delete(e.code));
 
+// --- touch (provisional shim; the real mobile scheme is Phase 5) -------------
+const touch = { x: 0, y: 0, act: false };
+
+function initTouch() {
+  const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (!isTouch) return;
+  document.getElementById('touch')!.classList.add('on');
+
+  const stick = document.getElementById('stick') as HTMLDivElement;
+  const nub = document.getElementById('nub') as HTMLDivElement;
+  let active = false;
+  const R = 46;
+
+  const move = (cx: number, cy: number) => {
+    const r = stick.getBoundingClientRect();
+    let dx = cx - (r.left + r.width / 2);
+    let dy = cy - (r.top + r.height / 2);
+    const m = Math.hypot(dx, dy);
+    if (m > R) {
+      dx = (dx / m) * R;
+      dy = (dy / m) * R;
+    }
+    nub.style.transform = `translate(${dx}px, ${dy}px)`;
+    touch.x = dx / R;
+    touch.y = dy / R;
+  };
+  const end = () => {
+    active = false;
+    touch.x = 0;
+    touch.y = 0;
+    nub.style.transform = 'translate(0,0)';
+  };
+
+  stick.addEventListener('touchstart', (e) => {
+    active = true;
+    const t = e.touches[0]!;
+    move(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+  stick.addEventListener('touchmove', (e) => {
+    if (!active) return;
+    const t = e.touches[0]!;
+    move(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+  stick.addEventListener('touchend', end);
+  stick.addEventListener('touchcancel', end);
+
+  const act = document.getElementById('actbtn') as HTMLDivElement;
+  act.addEventListener('touchstart', (e) => {
+    touch.act = true;
+    e.preventDefault();
+  }, { passive: false });
+  act.addEventListener('touchend', () => (touch.act = false));
+  act.addEventListener('touchcancel', () => (touch.act = false));
+}
+
 function readInput(): InputFrame {
   let x = 0;
   let y = 0;
@@ -107,7 +165,13 @@ function readInput(): InputFrame {
   if (keys.has('KeyD') || keys.has('ArrowRight')) x += 1;
   if (keys.has('KeyW') || keys.has('ArrowUp')) y -= 1;
   if (keys.has('KeyS') || keys.has('ArrowDown')) y += 1;
-  const act = keys.has('Space') || keys.has('KeyE') || keys.has('Enter');
+  let act = keys.has('Space') || keys.has('KeyE') || keys.has('Enter');
+  // Touch and keyboard are OR'd, so either works at any time.
+  if (touch.x || touch.y) {
+    x = touch.x;
+    y = touch.y;
+  }
+  act = act || touch.act;
   return { 0: { moveX: x, moveY: y, act, ping: false } };
 }
 
@@ -142,6 +206,13 @@ function update(now: number) {
 
 let seedCounter = 2026;
 
+function beginShift() {
+  document.getElementById('start')!.style.display = 'none';
+  document.getElementById('bill')!.style.display = 'none';
+  document.getElementById('hud')!.style.display = 'block';
+  sim = { ...sim, phase: 'playing' };
+}
+
 function restart() {
   seedCounter = (Date.now() % 1e9) | 0;
   sim = createShift({ seed: seedCounter, playerCount: 1 });
@@ -149,6 +220,7 @@ function restart() {
   running = true;
   for (const m of itemMeshes.values()) scene.remove(m);
   itemMeshes.clear();
+  clearChips();
   document.getElementById('bill')!.style.display = 'none';
   document.getElementById('hud')!.style.display = 'block';
 }
@@ -429,6 +501,9 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   frameKitchen();
 });
+
+document.getElementById('startbtn')!.addEventListener('click', beginShift);
+initTouch();
 
 (async () => {
   try {

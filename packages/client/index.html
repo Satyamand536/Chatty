@@ -69,6 +69,41 @@
       td { padding: 3px 0; border-bottom: 1px dotted #bdb6a4; }
       td:last-child { text-align: right; font-weight: 700; }
       .verdict { margin-top: 14px; text-align: center; font-style: italic; font-size: 14px; }
+      /* Start overlay */
+      #start { position: fixed; inset: 0; z-index: 30; display: flex;
+        align-items: center; justify-content: center; background: rgba(10,11,14,.9);
+        backdrop-filter: blur(3px); }
+      .panel { background: #1b1e24; border: 1px solid #3a3f48; border-radius: 12px;
+        padding: 26px 30px; max-width: min(92vw, 440px); text-align: center; }
+      .panel h1 { margin: 0 0 2px; font-size: 30px; letter-spacing: 4px; color: #ffd166; }
+      .panel .sub { color: #9aa0a6; font-size: 12px; margin-bottom: 18px; }
+      .keys { text-align: left; font-size: 13px; line-height: 2; margin: 0 auto 18px;
+        display: inline-block; }
+      .keys kbd { background: #2a2f38; border: 1px solid #454b56; border-bottom-width: 2px;
+        border-radius: 4px; padding: 2px 7px; font-family: inherit; font-size: 12px; color: #e8e8e8; }
+      .goal { font-size: 12px; color: #cfd3d8; background: rgba(255,209,102,.08);
+        border: 1px solid rgba(255,209,102,.25); border-radius: 8px; padding: 10px 12px;
+        margin-bottom: 18px; text-align: left; line-height: 1.6; }
+      .goal b { color: #ffd166; }
+      .panel button { font: inherit; font-weight: 700; font-size: 15px; padding: 12px 30px;
+        border-radius: 8px; border: 2px solid #ffd166; background: #ffd166; color: #1c1c1c;
+        cursor: pointer; }
+      .panel button:hover { background: #ffe08a; }
+      .panel .warn { margin-top: 12px; font-size: 11px; color: #e8622c; }
+
+      /* Touch controls (provisional input shim, not the Phase 5 mobile scheme) */
+      #touch { position: fixed; inset: 0; z-index: 15; display: none; pointer-events: none; }
+      #touch.on { display: block; }
+      #stick { position: absolute; left: 22px; bottom: 22px; width: 124px; height: 124px;
+        border-radius: 50%; background: rgba(0,0,0,.35); border: 2px solid #454b56;
+        pointer-events: auto; touch-action: none; }
+      #nub { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px;
+        margin: -26px 0 0 -26px; border-radius: 50%; background: #ffd166; opacity: .85; }
+      #actbtn { position: absolute; right: 26px; bottom: 34px; width: 104px; height: 104px;
+        border-radius: 50%; background: rgba(255,209,102,.22); border: 3px solid #ffd166;
+        color: #ffd166; font: 700 17px ui-monospace, monospace; pointer-events: auto;
+        touch-action: none; display: flex; align-items: center; justify-content: center; }
+      #actbtn:active { background: rgba(255,209,102,.5); }
       .seed { margin-top: 8px; text-align: center; font-size: 11px; color: #8a8f98; }
       .near { margin-top: 10px; text-align: center; font-size: 13px; color: #b8860b; }
       .card button { display: block; margin: 16px auto 0; font: inherit; font-weight: 700;
@@ -80,6 +115,32 @@
   <body>
     <div id="hud"></div>
     <div id="bill"></div>
+
+    <div id="touch">
+      <div id="stick"><div id="nub"></div></div>
+      <div id="actbtn">ACT</div>
+    </div>
+
+    <div id="start">
+      <div class="panel">
+        <h1>CHAOS KITCHEN</h1>
+        <div class="sub">Phase 2 greybox prototype &middot; one shift, four minutes</div>
+        <div class="keys">
+          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows &nbsp;move<br />
+          <kbd>SPACE</kbd> or <kbd>E</kbd> &nbsp;hold to work / pick up / serve<br />
+          <kbd>R</kbd> &nbsp;next shift (after The Bill)
+        </div>
+        <div class="goal">
+          Fill the tickets on the right. Grab an ingredient from a crate, prep or cook it,
+          put it on a <b>plate</b>, then serve at the <b>green pass</b>.<br />
+          The <b>yellow ring</b> shows what SPACE will do &mdash; trust it.<br />
+          Letting food burn or dropping it fills the <b>Chaos</b> meter&hellip; which also
+          <b>multiplies your payout</b>. That is the whole game.
+        </div>
+        <button id="startbtn">START SHIFT</button>
+        <div class="warn">On a phone? Touch controls appear automatically.</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
