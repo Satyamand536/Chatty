@@ -32,6 +32,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'hi
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+document.getElementById('boot')!.style.display = 'none';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1b1e24);

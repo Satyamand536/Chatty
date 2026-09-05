@@ -113,6 +113,41 @@
     </style>
   </head>
   <body>
+    <div id="boot" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      color:#9aa0a6;font:13px ui-monospace,monospace;z-index:50">starting renderer…</div>
+    <div id="fatal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      z-index:60;background:rgba(10,11,14,.96);color:#ff6b6b;font:13px ui-monospace,monospace;
+      padding:24px;text-align:left;white-space:pre-wrap"></div>
+    <script>
+      // Any uncaught error becomes visible instead of a blank screen.
+      window.addEventListener('error', function (e) {
+        var f = document.getElementById('fatal');
+        f.style.display = 'flex';
+        f.textContent = 'PAGE ERROR\n' + (e.message || e.error) + '\n\n' + (e.filename || '') + ':' + (e.lineno || '');
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var f = document.getElementById('fatal');
+        f.style.display = 'flex';
+        f.textContent = 'PROMISE ERROR\n' + (e.reason && e.reason.message ? e.reason.message : e.reason);
+      });
+      // WebGL availability check before the module even runs.
+      (function () {
+        try {
+          var c = document.createElement('canvas');
+          var gl = c.getContext('webgl2') || c.getContext('webgl');
+          if (!gl) {
+            var f = document.getElementById('fatal');
+            f.style.display = 'flex';
+            f.textContent = 'WebGL is not available in this browser context.\n' +
+              'The game needs WebGL. If this is an embedded preview, try opening it in a full browser tab.';
+          }
+        } catch (err) {
+          var f2 = document.getElementById('fatal');
+          f2.style.display = 'flex';
+          f2.textContent = 'WebGL check failed: ' + err;
+        }
+      })();
+    </script>
     <div id="hud"></div>
     <div id="bill"></div>
 

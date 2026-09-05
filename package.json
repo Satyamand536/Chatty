@@ -14,7 +14,8 @@
     "build:assets": "tsx packages/assets/build.ts",
     "bench:sim": "tsx packages/sim/bench.ts",
     "dev": "npm run dev --workspace @chaos-kitchen/client",
-    "build:client": "vite build --config packages/client/vite.config.ts"
+    "build:client": "vite build --config packages/client/vite.config.ts",
+    "serve": "npm run build:client && node packages/client/serve.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
