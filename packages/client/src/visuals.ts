@@ -15,7 +15,7 @@ import { KITCHEN, type StationDef } from '@chaos-kitchen/sim';
 
 export const STATION_COLOR: Record<string, number> = {
   crate: 0x8a8f98,
-  counter: 0x3fb6a8, // cold prep = teal
+  counter: 0x1c6f66, // cold prep = dark teal (kept dark so it separates from heat by luminance, not hue alone)
   grill: 0xe8622c,   // heat = warm orange
   pot: 0xe8622c,
   fryer: 0xf2c14e,   // fryer = yellow
@@ -94,6 +94,7 @@ function buildStation(s: StationDef): THREE.Group {
     new THREE.BoxGeometry(s.half.x * 2, height, s.half.y * 2),
     new THREE.MeshStandardMaterial({ color: STATION_COLOR[s.kind] ?? 0x888888, roughness: 0.8 }),
   );
+  body.name = `station:${s.id}`;
   body.position.set(s.pos.x, height / 2, s.pos.y);
   g.add(body);
   return g;
