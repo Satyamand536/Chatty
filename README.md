@@ -19,11 +19,11 @@ did it.
 
 | | |
 |---|---|
-| **Phase** | 1 — Simulation + art pipeline proof |
-| **Implemented** | Headless deterministic simulation (`packages/sim`), procedural glTF asset pipeline (`packages/assets`), Three.js viewer + performance harness (`packages/client`). **No networking. No gameplay client. Not a playable game yet.** |
-| **Verified** | 41 tests passing, typecheck clean, 18/18 glTF checks, sim at 0.099–0.182 ms/tick |
-| **Not verified** | Mid-range phone frame rate (**no browser in this environment**) and the Blender authoring leg (**no Blender here**). See [Phase 1 Report §4](docs/PHASE1_REPORT.md#4-workstream-b--what-is-verified-and-what-is-not). |
-| **Next** | Run the device benchmark, then Phase 2 — playable greybox |
+| **Phase** | 2 — Playable greybox prototype |
+| **Implemented** | Headless deterministic simulation (`packages/sim`), procedural glTF pipeline (`packages/assets`), and a **playable single-player greybox shift** (`packages/client`). **No networking. No local multiplayer yet — that is Phase 3.** |
+| **Verified** | 46 tests passing (incl. full-shift soak at 1/2/4 players), typecheck clean, production build clean, 18/18 glTF checks |
+| **Not verified** | **Everything visual.** There is no browser in this environment — I tried installing Chromium and the download is blocked. Rendering, HUD, and feel are unverified by me and need your eyes. Also unverified: phone frame rate, and the Blender authoring leg. |
+| **Next** | Human playtest of the greybox (Phase 2 gate), then Phase 3 — local multiplayer |
 
 ---
 
