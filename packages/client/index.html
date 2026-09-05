@@ -85,6 +85,17 @@
         border: 1px solid rgba(255,209,102,.25); border-radius: 8px; padding: 10px 12px;
         margin-bottom: 18px; text-align: left; line-height: 1.6; }
       .goal b { color: #ffd166; }
+      .picks { display: flex; gap: 8px; justify-content: center; margin: 0 0 16px; flex-wrap: wrap; }
+      .pick { font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+              background: #232830; color: #cfd3d8; border: 1px solid #3a414c; }
+      .pick.on { background: #ffd166; color: #1b1f26; border-color: #ffd166; font-weight: 700; }
+      .padnote { font-size: 11px; color: #7f8794; margin: 0 0 14px; min-height: 14px; }
+      /* per-cook strip: with four players this is how you see whose patty is where */
+      .cooks { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 12px;
+               color: #cfd3d8; justify-content: center; }
+      .cook { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,.25);
+              padding: 2px 8px; border-radius: 999px; }
+      .cook i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
       .panel button { font: inherit; font-weight: 700; font-size: 15px; padding: 12px 30px;
         border-radius: 8px; border: 2px solid #ffd166; background: #ffd166; color: #1c1c1c;
         cursor: pointer; }
@@ -160,11 +171,14 @@
       <div class="panel">
         <h1>CHAOS KITCHEN</h1>
         <div class="sub">Phase 2 greybox prototype &middot; one shift, four minutes</div>
-        <div class="keys">
-          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows &nbsp;move<br />
-          <kbd>SPACE</kbd> or <kbd>E</kbd> &nbsp;hold to work / pick up / serve<br />
-          <kbd>R</kbd> &nbsp;next shift (after The Bill)
+        <div class="picks" id="picks">
+          <button class="pick on" data-n="1">1 cook</button>
+          <button class="pick" data-n="2">2 cooks</button>
+          <button class="pick" data-n="3">3 cooks</button>
+          <button class="pick" data-n="4">4 cooks</button>
         </div>
+        <div class="keys" id="cast"></div>
+        <div class="padnote" id="padnote"></div>
         <div class="goal">
           Fill the tickets on the right. Grab an ingredient from a crate, prep or cook it,
           put it on a <b>plate</b>, then serve at the <b>green pass</b>.<br />

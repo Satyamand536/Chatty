@@ -23,6 +23,14 @@ import {
   type WorldItem,
 } from '@chaos-kitchen/sim';
 import { buildKitchen, cookTint, ITEM_COLOR, makeHighlight, makeItemMesh, makePlayerRing } from './visuals.js';
+import {
+  attachKeyboard,
+  beginFrame,
+  connectedPads,
+  KEY_LABELS,
+  readPlayerInput,
+  touch,
+} from './input.js';
 
 // ---------------------------------------------------------------------------
 // Renderer / scene
@@ -59,28 +67,97 @@ const chaosLight = new THREE.PointLight(0xff5a1f, 0, 30);
 chaosLight.position.set(5.5, 4, 6.5);
 scene.add(chaosLight);
 
-const highlight = makeHighlight();
-highlight.visible = false;
-scene.add(highlight);
+/** One colour per cook, used for the stand-in, the ring, the highlight and the HUD. */
+export const PLAYER_COLORS = [0x7bd94e, 0x4aa8ff, 0xffd23f, 0xff5e8a];
 
-const playerRing = makePlayerRing(0x7bd94e);
-scene.add(playerRing);
+interface PlayerView {
+  root: THREE.Group;
+  ring: THREE.Mesh;
+  highlight: THREE.Mesh;
+  mesh: THREE.Object3D;
+  color: number;
+}
 
-// Player stand-in until the gremlin loads.
-let playerMesh: THREE.Object3D = new THREE.Mesh(
-  new THREE.CapsuleGeometry(0.3, 0.7, 4, 10),
-  new THREE.MeshStandardMaterial({ color: 0x7bd94e, roughness: 0.6, flatShading: true }),
-);
-playerMesh.position.y = 0.75;
-const playerRoot = new THREE.Group();
-playerRoot.add(playerMesh);
-scene.add(playerRoot);
+const playerViews: PlayerView[] = [];
+
+function capsuleStandIn(color: number): THREE.Object3D {
+  const m = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.3, 0.7, 4, 10),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: true }),
+  );
+  m.position.y = 0.75;
+  return m;
+}
+
+/**
+ * Grow or shrink the cast to match the shift. Rebuilt on player-count change so a 4p
+ * shift never renders 1 cook, and a 1p shift never leaves 3 ghosts in the kitchen.
+ */
+function ensureCast(n: number) {
+  while (playerViews.length > n) {
+    const v = playerViews.pop()!;
+    scene.remove(v.root, v.ring, v.highlight);
+  }
+  while (playerViews.length < n) {
+    const i = playerViews.length;
+    const color = PLAYER_COLORS[i % PLAYER_COLORS.length]!;
+    const root = new THREE.Group();
+    const mesh = capsuleStandIn(color);
+    root.add(mesh);
+    const ring = makePlayerRing(color);
+    const highlight = makeHighlight();
+    highlight.visible = false;
+    scene.add(root, ring, highlight);
+    playerViews.push({ root, ring, highlight, mesh, color });
+  }
+}
+
+ensureCast(1);
+
+/** The gremlin bytes, kept so cooks added after load get one too. */
+let glbBuffer: ArrayBuffer | null = null;
+const dressed = new WeakSet<THREE.Group>();
+
+/** Cooks created after the asset loaded still get the real model, not a capsule. */
+function dressLateJoiners() {
+  for (const view of playerViews) {
+    if (dressed.has(view.root)) continue;
+    dressed.add(view.root);
+    void (async () => {
+      const gltf = await new GLTFLoader().parseAsync(glbBuffer!, '');
+      gltf.scene.scale.setScalar(1.0);
+      applyGremlinTo(view, gltf.scene, gltf.animations[0] ?? null);
+    })();
+  }
+}
+
+function applyGremlinTo(view: PlayerView, g: THREE.Object3D, clip: THREE.AnimationClip | null) {
+  g.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh) m.material = new THREE.MeshStandardMaterial({ color: view.color, roughness: 0.6, flatShading: true });
+  });
+  view.root.remove(view.mesh);
+  view.root.add(g);
+  view.mesh = g;
+  if (!clip) return;
+  // Real delta, not a fixed DT — otherwise animation speed tracks the frame rate.
+  const mixer = new THREE.AnimationMixer(g);
+  mixer.clipAction(clip).play();
+  let prev = performance.now();
+  const tick = (now: number) => {
+    mixer.update(Math.min(0.1, (now - prev) / 1000));
+    prev = now;
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 // ---------------------------------------------------------------------------
 // Simulation driver
 // ---------------------------------------------------------------------------
 
 // Start paused in the lobby. `step` is a no-op unless phase === 'playing'.
+let playerCount = 1;
 let sim: SimState = { ...createShift({ seed: 2026, playerCount: 1 }), phase: 'lobby' };
 let accumulator = 0;
 let lastTime = performance.now();
@@ -94,16 +171,12 @@ scene.add(heldGroup);
 // Input
 // ---------------------------------------------------------------------------
 
-const keys = new Set<string>();
+attachKeyboard();
 window.addEventListener('keydown', (e) => {
-  keys.add(e.code);
-  if (e.code === 'Space') e.preventDefault();
   if (e.code === 'KeyR' && sim.phase === 'ended') restart();
 });
-window.addEventListener('keyup', (e) => keys.delete(e.code));
 
 // --- touch (provisional shim; the real mobile scheme is Phase 5) -------------
-const touch = { x: 0, y: 0, act: false };
 
 function initTouch() {
   const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -159,21 +232,14 @@ function initTouch() {
   act.addEventListener('touchcancel', () => (touch.act = false));
 }
 
-function readInput(): InputFrame {
-  let x = 0;
-  let y = 0;
-  if (keys.has('KeyA') || keys.has('ArrowLeft')) x -= 1;
-  if (keys.has('KeyD') || keys.has('ArrowRight')) x += 1;
-  if (keys.has('KeyW') || keys.has('ArrowUp')) y -= 1;
-  if (keys.has('KeyS') || keys.has('ArrowDown')) y += 1;
-  let act = keys.has('Space') || keys.has('KeyE') || keys.has('Enter');
-  // Touch and keyboard are OR'd, so either works at any time.
-  if (touch.x || touch.y) {
-    x = touch.x;
-    y = touch.y;
+/** One input per cook on shift. Players past playerCount simply get no entry. */
+function readInputs(): InputFrame {
+  const frame: InputFrame = {};
+  for (let i = 0; i < playerCount; i++) {
+    const f = readPlayerInput(i);
+    frame[i] = { moveX: f.moveX, moveY: f.moveY, act: f.actHeld, ping: f.pingPressed };
   }
-  act = act || touch.act;
-  return { 0: { moveX: x, moveY: y, act, ping: false } };
+  return frame;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,12 +249,13 @@ function readInput(): InputFrame {
 function update(now: number) {
   const frameSec = Math.min(0.25, (now - lastTime) / 1000);
   lastTime = now;
+  beginFrame();
 
   if (sim.phase === 'playing') {
     accumulator += frameSec;
     let guard = 0;
     while (accumulator >= DT && guard < 40) {
-      sim = step(sim, readInput(), DT);
+      sim = step(sim, readInputs(), DT);
       accumulator -= DT;
       guard++;
     }
@@ -214,9 +281,38 @@ function beginShift() {
   sim = { ...sim, phase: 'playing' };
 }
 
+function renderCastLegend(n: number, pads: number) {
+  const el = document.getElementById('cast');
+  if (!el) return;
+  el.innerHTML = Array.from({ length: n }, (_, i) => {
+    const l = KEY_LABELS[i]!;
+    const pad = i < pads ? ' &nbsp;<b>+ PAD ' + (i + 1) + '</b>' : '';
+    return `<div><b style="color:#${PLAYER_COLORS[i % PLAYER_COLORS.length]!.toString(16).padStart(6, '0')}">P${i + 1}</b>
+      &nbsp;<kbd>${l.move}</kbd> move &nbsp;<kbd>${l.act}</kbd> work &nbsp;<kbd>${l.ping}</kbd> ping${pad}</div>`;
+  }).join('') + '<div><kbd>R</kbd> next shift (after The Bill)</div>';
+  const note = document.getElementById('padnote');
+  if (note) note.textContent = pads > 0 ? `${pads} gamepad(s) detected.` : 'Plug in a gamepad and press a button — pad 1 drives P1.';
+}
+
+function initLobby() {
+  renderCastLegend(playerCount, connectedPads());
+  // Gamepads only appear once one has been touched; refresh the note when that happens.
+  globalThis.addEventListener?.('gamepadconnected', () => renderCastLegend(playerCount, connectedPads()));
+  const picks = document.getElementById('picks');
+  picks?.addEventListener('click', (ev) => {
+    const btn = (ev.target as HTMLElement).closest('.pick') as HTMLElement | null;
+    const n = Number(btn?.dataset.n);
+    if (!n || n < 1 || n > 4) return;
+    playerCount = n;
+    ensureCast(n);
+    picks.querySelectorAll('.pick').forEach((b) => b.classList.toggle('on', b === btn));
+    renderCastLegend(n, connectedPads());
+  });
+}
+
 function restart() {
   seedCounter = (Date.now() % 1e9) | 0;
-  sim = createShift({ seed: seedCounter, playerCount: 1 });
+  sim = createShift({ seed: seedCounter, playerCount });
   accumulator = 0;
   running = true;
   for (const m of itemMeshes.values()) scene.remove(m);
@@ -232,25 +328,29 @@ function restart() {
 // ---------------------------------------------------------------------------
 
 function syncScene() {
-  const p = sim.players[0]!;
-  playerRoot.position.set(p.pos.x, 0, p.pos.y);
-  playerRing.position.set(p.pos.x, 0.04, p.pos.y);
+  ensureCast(sim.players.length);
+  if (glbBuffer) dressLateJoiners();
 
-  // Face whatever the Act button would hit, so the player can see their own intent.
-  const facing = nearestStation(sim, p);
-  if (facing) {
-    playerRoot.rotation.y = Math.atan2(facing.pos.x - p.pos.x, facing.pos.y - p.pos.y);
-  }
+  for (let i = 0; i < playerViews.length; i++) {
+    const view = playerViews[i]!;
+    const p = sim.players[i];
+    if (!p) { view.root.visible = view.ring.visible = view.highlight.visible = false; continue; }
+    view.root.visible = view.ring.visible = true;
+    view.root.position.set(p.pos.x, 0, p.pos.y);
+    view.ring.position.set(p.pos.x, 0.04, p.pos.y);
 
-  // Act target highlight — the S5.2 requirement. Show what WILL happen, before the press.
-  const target = nearestStation(sim, p);
-  if (target) {
-    highlight.visible = true;
-    highlight.position.set(target.pos.x, 0.06, target.pos.y);
-    const scale = Math.max(target.half.x, target.half.y) * 2.1;
-    highlight.scale.setScalar(scale);
-  } else {
-    highlight.visible = false;
+    // Face what the Act button would hit, so each cook can see their own intent.
+    const target = nearestStation(sim, p);
+    if (target) {
+      view.root.rotation.y = Math.atan2(target.pos.x - p.pos.x, target.pos.y - p.pos.y);
+      // Act target highlight — the S5.2 requirement, per player, in that player's colour.
+      view.highlight.visible = true;
+      view.highlight.position.set(target.pos.x, 0.06, target.pos.y);
+      view.highlight.scale.setScalar(Math.max(target.half.x, target.half.y) * 2.1);
+      (view.highlight.material as THREE.MeshBasicMaterial).color.setHex(view.color);
+    } else {
+      view.highlight.visible = false;
+    }
   }
 
   // Chaos drives the lighting (S10.3).
@@ -278,8 +378,11 @@ function syncScene() {
     let y = 0.35;
     let z = 0;
     if (it.heldBy !== undefined) {
-      x = p.pos.x;
-      z = p.pos.y;
+      const holder = sim.players[it.heldBy];
+      if (holder) {
+        x = holder.pos.x;
+        z = holder.pos.y;
+      }
       y = 1.55;
     } else if (it.atStation) {
       const st = stationById(it.atStation);
@@ -368,10 +471,24 @@ function syncHud() {
     </div>
     <div class="rail">${renderRail()}</div>
     <div class="ctx">${contextLine(target?.kind ?? null, heldItem, onTarget)}</div>
-    <div class="hint">WASD move &nbsp;&middot;&nbsp; <b>SPACE</b> act &nbsp;&middot;&nbsp; ${
-      p.action ? `working ${Math.round(p.action.progress * 100)}%` : 'hold to work'
-    }</div>
+    ${renderCooks()}
   `;
+}
+
+/**
+ * Per-cook strip. With one cook it is a control hint; with four it is the only way to
+ * see whose patty is where, so it carries each cook's colour, held item and progress.
+ */
+function renderCooks(): string {
+  return `<div class="cooks">${sim.players
+    .map((pl, i) => {
+      const held = pl.held !== null ? sim.items.find((it) => it.id === pl.held) : undefined;
+      const col = `#${PLAYER_COLORS[i % PLAYER_COLORS.length]!.toString(16).padStart(6, '0')}`;
+      const pct = pl.action ? Math.round(pl.action.progress * 100) : null;
+      const what = pct !== null ? `working ${pct}%` : held ? (held.def ?? 'item') : '&mdash;';
+      return `<div class="cook"><i style="background:${col}"></i>P${i + 1} ${what}</div>`;
+    })
+    .join('')}</div>`;
 }
 
 function renderRail(): string {
@@ -505,6 +622,7 @@ window.addEventListener('resize', () => {
 
 document.getElementById('startbtn')!.addEventListener('click', beginShift);
 initTouch();
+initLobby();
 
 (async () => {
   try {
@@ -517,21 +635,11 @@ initTouch();
       if (m.isMesh) m.material = new THREE.MeshStandardMaterial({ color: 0x7bd94e, roughness: 0.6, flatShading: true });
     });
     g.scale.setScalar(1.0);
-    playerRoot.remove(playerMesh);
-    playerRoot.add(g);
-    playerMesh = g;
-    if (gltf.animations[0]) {
-      // Real delta, not a fixed DT — otherwise animation speed tracks the frame rate.
-      const mixer = new THREE.AnimationMixer(g);
-      mixer.clipAction(gltf.animations[0]).play();
-      let prev = performance.now();
-      const tick = (now: number) => {
-        mixer.update(Math.min(0.1, (now - prev) / 1000));
-        prev = now;
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }
+    // Store the parsed result and re-parse per cook. scene.clone() does NOT rebind a
+    // SkinnedMesh's skeleton, so cloned gremlins would animate but never deform.
+    glbBuffer = buf;
+    dressed.add(playerViews[0]!.root); // already wearing it; do not re-parse
+    applyGremlinTo(playerViews[0]!, g, gltf.animations[0] ?? null);
   } catch {
     // Fall back to the capsule. The prototype must still be playable without the asset.
   }
